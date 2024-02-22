@@ -1,0 +1,11 @@
+{
+    "[rust]": {
+        "editor.formatOnSave": true
+      },
+    "rust-analyzer.linkedProjects": [
+        "./Cargo.toml",
+    ],
+    "rust-analyzer.check.command": "clippy",
+    "rust-analyzer.imports.granularity.enforce": true,
+    "rust-analyzer.imports.granularity.group": "module",
+}
