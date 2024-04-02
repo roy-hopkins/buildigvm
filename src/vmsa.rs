@@ -47,6 +47,7 @@ pub fn construct_ap_vmsa(
     vmsa.ss.attrib = 0x93;
 
     vmsa.cr0 = 0x60000010;
+    vmsa.xcr0 = 1;
 
     vmsa.rip = reset_addr as u64 & 0xffff;
 
@@ -94,12 +95,10 @@ pub fn construct_bsp_vmsa(
     vmsa.ss.limit = 0xffff;
     vmsa.ss.attrib = 0x93;
 
-    vmsa.rip = reset_addr as u64 & 0xffff;
+    vmsa.cr0 = 0x60000010;
+    vmsa.xcr0 = 1;
 
-    let mut features = SevFeatures::new();
-    features.set_snp(true);
-    features.set_restrict_injection(true);
-    vmsa.sev_features = features;
+    vmsa.rip = reset_addr as u64 & 0xffff;
 
     Ok(IgvmDirectiveHeader::SnpVpContext {
         gpa: gpa_start,
