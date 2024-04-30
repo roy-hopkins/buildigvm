@@ -12,7 +12,7 @@ use clap::Parser;
 use igvm::{IgvmDirectiveHeader, IgvmFile, IgvmPlatformHeader, IgvmRevision};
 use igvm_defs::{IgvmPlatformType, IGVM_VHS_SUPPORTED_PLATFORM};
 
-use crate::cmd_options::CmdOptions;
+use crate::cmd_options::{self, CmdOptions};
 use crate::ovmf_firmware::OvmfFirmware;
 use crate::vmsa::{construct_ap_vmsa, construct_bsp_vmsa};
 
@@ -77,11 +77,16 @@ impl IgvmBuilder {
     }
 
     fn build_platforms(&mut self) {
+        let platform_type = match self.options.platform {
+            cmd_options::Platform::Sev => IgvmPlatformType::SEV_SNP,
+            cmd_options::Platform::SevEs => IgvmPlatformType::SEV_SNP,
+            cmd_options::Platform::Native => IgvmPlatformType::NATIVE,
+        };
         self.platforms.push(IgvmPlatformHeader::SupportedPlatform(
             IGVM_VHS_SUPPORTED_PLATFORM {
                 compatibility_mask: COMPATIBILITY_MASK,
                 highest_vtl: 0,
-                platform_type: IgvmPlatformType::SEV_SNP,
+                platform_type,
                 platform_version: 1,
                 shared_gpa_boundary: 0,
             },

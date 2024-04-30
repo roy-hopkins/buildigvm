@@ -6,7 +6,7 @@
 
 use std::error::Error;
 
-use igvm::snp_defs::{SevFeatures, SevVmsa};
+use igvm::snp_defs::SevVmsa;
 use igvm::IgvmDirectiveHeader;
 use zerocopy::FromZeroes;
 

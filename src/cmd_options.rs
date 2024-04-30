@@ -34,4 +34,6 @@ pub enum Platform {
 
     /// Build an IGVM file compatible with SEV-ES
     SevEs,
+    /// Build an IGVM file for the native platform without isolation
+    Native,
 }

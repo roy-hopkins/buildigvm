@@ -153,9 +153,9 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "igvm"
-version = "0.1.4"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b39ce99255103ed59ba094d96b76f02888b2d758bf8d3073db07b1639d84133"
+checksum = "7fc6f4b643ea7266268a6a0ce3c6e146679ea041a55577a51d8173c18ce0c89a"
 dependencies = [
  "bitfield-struct",
  "crc32fast",
@@ -170,9 +170,9 @@ dependencies = [
 
 [[package]]
 name = "igvm_defs"
-version = "0.1.4"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d85cbb0ef807341203f6dfd403903fe532c3b9cf091be9273e9bebd0e8012e78"
+checksum = "1348f0e14c5d761c2185841c42ff6aed8ef6ea62a5aa1d28a1587d87ec4ab827"
 dependencies = [
  "bitfield-struct",
  "open-enum",
