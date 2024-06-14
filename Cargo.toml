@@ -5,8 +5,8 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.4.14", features = ["derive"] }
-igvm_defs = { version = "0.1.6" }
-igvm = { version = "0.1.6" }
+igvm_defs = { version = "0.3.2" }
+igvm = { version = "0.3.2" }
 uuid = "1.6.1"
 zerocopy = { version = "0.7.32" }
 
