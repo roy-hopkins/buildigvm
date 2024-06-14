@@ -78,8 +78,8 @@ impl IgvmBuilder {
 
     fn build_platforms(&mut self) {
         let platform_type = match self.options.platform {
-            cmd_options::Platform::Sev => IgvmPlatformType::SEV_SNP,
-            cmd_options::Platform::SevEs => IgvmPlatformType::SEV_SNP,
+            cmd_options::Platform::Sev => IgvmPlatformType::SEV,
+            cmd_options::Platform::SevEs => IgvmPlatformType::SEV_ES,
             cmd_options::Platform::Native => IgvmPlatformType::NATIVE,
         };
         self.platforms.push(IgvmPlatformHeader::SupportedPlatform(
