@@ -13,6 +13,8 @@ use igvm::IgvmDirectiveHeader;
 use igvm_defs::{IgvmPageDataFlags, IgvmPageDataType, PAGE_SIZE_4K};
 use uuid::{uuid, Uuid};
 
+use crate::cmd_options::Platform;
+
 const OVMF_TABLE_FOOTER_GUID: Uuid = uuid!("96b582de-1fb2-45f7-baea-a366c55a082d");
 const OVMF_SEV_METADATA_GUID: Uuid = uuid!("dc886566-984a-4798-a75e-5585a7bf67cc");
 const SEV_INFO_BLOCK_GUID: Uuid = uuid!("00f771de-1a7e-4fcb-890e-68c77e2fb44e");
@@ -253,7 +255,11 @@ pub struct OvmfFirmware {
 }
 
 impl OvmfFirmware {
-    pub fn parse(filename: &String, compatibility_mask: u32) -> Result<Self, Box<dyn Error>> {
+    pub fn parse(
+        filename: &String,
+        compatibility_mask: u32,
+        platform: Platform,
+    ) -> Result<Self, Box<dyn Error>> {
         let mut in_file = File::open(filename).map_err(|e| {
             eprintln!("Failed to open firmware file {}", filename);
             e
@@ -285,6 +291,43 @@ impl OvmfFirmware {
                 data: page_data.to_vec(),
             });
             gpa += PAGE_SIZE_4K;
+        }
+
+        if let Platform::SevSnp = platform {
+            // Build page directives for the metadata
+            directives.push(IgvmDirectiveHeader::PageData {
+                gpa: fw_info.secrets_page as u64,
+                compatibility_mask,
+                flags: IgvmPageDataFlags::new(),
+                data_type: IgvmPageDataType::SECRETS,
+                data: vec![],
+            });
+            directives.push(IgvmDirectiveHeader::PageData {
+                gpa: fw_info.caa_page as u64,
+                compatibility_mask,
+                flags: IgvmPageDataFlags::new(),
+                data_type: IgvmPageDataType::NORMAL,
+                data: vec![],
+            });
+            directives.push(IgvmDirectiveHeader::PageData {
+                gpa: fw_info.cpuid_page as u64,
+                compatibility_mask,
+                flags: IgvmPageDataFlags::new(),
+                data_type: IgvmPageDataType::CPUID_DATA,
+                data: vec![],
+            });
+            for i in 0..fw_info.prevalidated_count {
+                let pv_mem = fw_info.prevalidated[i as usize];
+                for offset in (0..pv_mem.size).step_by(PAGE_SIZE_4K as usize) {
+                    directives.push(IgvmDirectiveHeader::PageData {
+                        gpa: (pv_mem.base + offset) as u64,
+                        compatibility_mask,
+                        flags: IgvmPageDataFlags::new(),
+                        data_type: IgvmPageDataType::NORMAL,
+                        data: vec![],
+                    });
+                }
+            }
         }
 
         Ok(Self {

@@ -9,7 +9,9 @@ use std::fs::File;
 use std::io::Write;
 
 use clap::Parser;
-use igvm::{IgvmDirectiveHeader, IgvmFile, IgvmPlatformHeader, IgvmRevision};
+use igvm::{
+    IgvmDirectiveHeader, IgvmFile, IgvmInitializationHeader, IgvmPlatformHeader, IgvmRevision,
+};
 use igvm_defs::{IgvmPlatformType, IGVM_VHS_SUPPORTED_PLATFORM};
 
 use crate::cmd_options::{self, CmdOptions};
@@ -22,22 +24,26 @@ pub struct IgvmBuilder {
     options: CmdOptions,
     firmware: OvmfFirmware,
     platforms: Vec<IgvmPlatformHeader>,
+    initialization: Vec<IgvmInitializationHeader>,
     directives: Vec<IgvmDirectiveHeader>,
 }
 
 impl IgvmBuilder {
     pub fn new() -> Result<Self, Box<dyn Error>> {
         let options = CmdOptions::parse();
-        let firmware = OvmfFirmware::parse(&options.firmware, COMPATIBILITY_MASK)?;
+        let firmware =
+            OvmfFirmware::parse(&options.firmware, COMPATIBILITY_MASK, options.platform)?;
         Ok(Self {
             options,
             firmware,
             platforms: vec![],
+            initialization: vec![],
             directives: vec![],
         })
     }
 
     pub fn build(mut self) -> Result<(), Box<dyn Error>> {
+        self.build_initialization()?;
         self.build_directives()?;
         self.build_platforms();
 
@@ -56,11 +62,16 @@ impl IgvmBuilder {
             println!("{fw_info:#X?}");
         }
 
-        let file = IgvmFile::new(IgvmRevision::V1, self.platforms, vec![], self.directives)
-            .map_err(|e| {
-                eprintln!("Failed to create output file");
-                e
-            })?;
+        let file = IgvmFile::new(
+            IgvmRevision::V1,
+            self.platforms,
+            self.initialization,
+            self.directives,
+        )
+        .map_err(|e| {
+            eprintln!("Failed to create output file");
+            e
+        })?;
 
         let mut binary_file = Vec::new();
         file.serialize(&mut binary_file)?;
@@ -80,6 +91,7 @@ impl IgvmBuilder {
         let platform_type = match self.options.platform {
             cmd_options::Platform::Sev => IgvmPlatformType::SEV,
             cmd_options::Platform::SevEs => IgvmPlatformType::SEV_ES,
+            cmd_options::Platform::SevSnp => IgvmPlatformType::SEV_SNP,
             cmd_options::Platform::Native => IgvmPlatformType::NATIVE,
         };
         self.platforms.push(IgvmPlatformHeader::SupportedPlatform(
@@ -98,24 +110,46 @@ impl IgvmBuilder {
         self.directives
             .extend_from_slice(self.firmware.directives());
 
-        if let crate::cmd_options::Platform::SevEs = self.options.platform {
-            // Build VMSAs for the required number of processors
-            self.directives
-                .push(construct_bsp_vmsa(0, COMPATIBILITY_MASK)?);
-            for vp in 1..self.options.cpucount {
-                self.directives.push(construct_ap_vmsa(
-                    0,
+        match self.options.platform {
+            cmd_options::Platform::SevEs | cmd_options::Platform::SevSnp => {
+                // Build VMSAs for the required number of processors
+                self.directives.push(construct_bsp_vmsa(
+                    0xFFFFFFFFF000,
                     COMPATIBILITY_MASK,
-                    self.firmware.get_fw_info().reset_addr,
-                    vp,
+                    self.options.platform,
                 )?);
+                for vp in 1..self.options.cpucount {
+                    self.directives.push(construct_ap_vmsa(
+                        0xFFFFFFFFF000,
+                        COMPATIBILITY_MASK,
+                        self.options.platform,
+                        self.firmware.get_fw_info().reset_addr,
+                        vp,
+                    )?);
+                }
             }
+            _ => (),
         }
+        Ok(())
+    }
 
+    fn build_initialization(&mut self) -> Result<(), Box<dyn Error>> {
+        let policy = match self.options.platform {
+            cmd_options::Platform::Sev => 1,             // No Debug
+            cmd_options::Platform::SevEs => 5,           // No Debug and ES required
+            cmd_options::Platform::SevSnp => 0x30000u64, // Reserved bit set and SMT allowed
+            cmd_options::Platform::Native => 0,
+        };
+        self.initialization
+            .push(IgvmInitializationHeader::GuestPolicy {
+                policy,
+                compatibility_mask: COMPATIBILITY_MASK,
+            });
         Ok(())
     }
 
     fn filter_pages(directive: &IgvmDirectiveHeader) -> bool {
         matches!(directive, IgvmDirectiveHeader::PageData { .. })
+            || matches!(directive, IgvmDirectiveHeader::SnpVpContext { .. })
     }
 }

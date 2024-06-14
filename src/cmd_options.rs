@@ -31,9 +31,10 @@ pub struct CmdOptions {
 pub enum Platform {
     /// Build an IGVM file compatible with SEV
     Sev,
-
     /// Build an IGVM file compatible with SEV-ES
     SevEs,
+    /// Build an IGVM file compatible with SEV-SNP
+    SevSnp,
     /// Build an IGVM file for the native platform without isolation
     Native,
 }
