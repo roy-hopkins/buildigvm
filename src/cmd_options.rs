@@ -16,7 +16,7 @@ pub struct CmdOptions {
     #[arg(short, long)]
     pub output: String,
 
-    #[arg(short, long)]
+    #[arg(short, long, default_value_t = 1)]
     pub cpucount: u16,
 
     /// Print verbose output
