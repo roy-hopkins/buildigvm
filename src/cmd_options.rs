@@ -29,12 +29,12 @@ pub struct CmdOptions {
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
 pub enum Platform {
-    /// Build an IGVM file compatible with SEV
+    /// AMD SEV
     Sev,
-    /// Build an IGVM file compatible with SEV-ES
+    /// AMD SEV-ES
     SevEs,
-    /// Build an IGVM file compatible with SEV-SNP
+    /// AMD SEV-SNP
     SevSnp,
-    /// Build an IGVM file for the native platform without isolation
+    /// An X86-64 platform that does not include support for any isolation technology
     Native,
 }
