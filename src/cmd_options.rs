@@ -23,6 +23,10 @@ pub struct CmdOptions {
     #[arg(short, long, default_value_t = false)]
     pub verbose: bool,
 
+    /// Set the VMSA GPA to for each vCPU to a unique address rather than using a fixed address of 0xFFFFFFFFF000
+    #[arg(short, long, default_value_t = false)]
+    pub uniquevmsa: bool,
+
     #[arg(value_enum)]
     pub platform: Platform,
 }

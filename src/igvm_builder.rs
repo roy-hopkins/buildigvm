@@ -111,7 +111,41 @@ impl IgvmBuilder {
             .extend_from_slice(self.firmware.directives());
 
         match self.options.platform {
-            cmd_options::Platform::SevEs | cmd_options::Platform::SevSnp => {
+            cmd_options::Platform::SevSnp => {
+                // Build VMSAs for the required number of processors
+                if self.options.uniquevmsa {
+                    self.directives.push(construct_bsp_vmsa(
+                        0xFFFFFFF00000,
+                        COMPATIBILITY_MASK,
+                        self.options.platform,
+                    )?);
+                    for vp in 1..self.options.cpucount {
+                        self.directives.push(construct_ap_vmsa(
+                            0xFFFFFFF00000 + vp as u64 * 0x1000,
+                            COMPATIBILITY_MASK,
+                            self.options.platform,
+                            self.firmware.get_fw_info().reset_addr,
+                            vp,
+                        )?);
+                    }
+                } else {
+                    self.directives.push(construct_bsp_vmsa(
+                        0xFFFFFFFFF000,
+                        COMPATIBILITY_MASK,
+                        self.options.platform,
+                    )?);
+                    for vp in 1..self.options.cpucount {
+                        self.directives.push(construct_ap_vmsa(
+                            0xFFFFFFFFF000,
+                            COMPATIBILITY_MASK,
+                            self.options.platform,
+                            self.firmware.get_fw_info().reset_addr,
+                            vp,
+                        )?);
+                    }
+                }
+            }
+            cmd_options::Platform::SevEs => {
                 // Build VMSAs for the required number of processors
                 self.directives.push(construct_bsp_vmsa(
                     0xFFFFFFFFF000,
